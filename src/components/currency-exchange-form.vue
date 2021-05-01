@@ -1,0 +1,154 @@
+<template>
+  <form class="flex flex-wrap pb-10 space-x-8" @submit.prevent="currencyConversionFormService.send('SUBMIT')">
+    <div class="w-1/6">
+      <label for="price" class="block text-sm font-medium text-gray-100"> Amount </label>
+      <div class="relative mt-1 rounded-md shadow-sm">
+        <input
+          type="text"
+          name="price"
+          id="price"
+          class="focus:ring-indigo-500 focus:border-indigo-500 pl-7 sm:text-sm block w-full h-12 border-gray-300 rounded-md"
+          placeholder="1.00"
+          value="1.00"
+          aria-describedby="price-currency"
+          @input="updateAmount($event.target)"
+          required
+        />
+      </div>
+    </div>
+
+    <div class="flex-1">
+      <label for="price" class="block text-sm font-medium text-gray-100"> From </label>
+      <div class="relative mt-1 rounded-md shadow-sm">
+        <Multiselect
+          v-model="fromCurrency"
+          :options="currencyOptions"
+          :multiple="false"
+          :close-on-select="true"
+          :clear-on-select="true"
+          placeholder="Select base currency"
+          @select="updateFromSelected"
+          :allow-empty="false"
+        />
+      </div>
+    </div>
+
+    <div class="flex-1">
+      <label for="price" class="block text-sm font-medium text-gray-100"> To </label>
+      <div class="relative mt-1 rounded-md shadow-sm">
+        <Multiselect
+          v-model="toCurrencies"
+          :options="currencyOptions"
+          :multiple="true"
+          :close-on-select="false"
+          :clear-on-select="false"
+          :preserve-search="true"
+          placeholder="Choose currencies to convert to"
+          :allow-empty="required"
+        />
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="h-11 hover:bg-indigo-600 px-4 py-2 mt-6 text-base font-medium text-white bg-indigo-500 rounded-md shadow-sm"
+    >
+      Convert!
+    </button>
+  </form>
+</template>
+
+<script lang="ts">
+import { computed, defineComponent, inject, Ref, ref, watch } from 'vue'
+import Multiselect from '@suadelabs/vue3-multiselect'
+import { createDataMachine } from '../machines/data-fetch-machine'
+import { useMachine } from '@xstate/vue'
+import Currencies from '../api/currencies'
+import { CurrencyConversionRequest } from '../api/conversions'
+import { Interpreter, State } from 'xstate'
+import { FormContext, FormEvents, FormSchema } from '../machines/form-machine'
+
+export default defineComponent({
+  name: 'Home',
+  components: { Multiselect },
+  setup: () => {
+    const fromCurrency = ref('')
+    const toCurrencies = ref([])
+
+    const currencyConversionFormService = inject('currencyConversionFormService') as Interpreter<
+      FormContext<CurrencyConversionRequest>,
+      FormSchema<CurrencyConversionRequest>,
+      FormEvents<CurrencyConversionRequest>
+    >
+    const currencyConversionFormState = inject('currencyConversionFormState') as Ref<
+      State<
+        FormContext<CurrencyConversionRequest>,
+        FormEvents<CurrencyConversionRequest>,
+        FormSchema<CurrencyConversionRequest>
+      >
+    >
+
+    const { state: fetchState, send: fetchSend } = useMachine(
+      createDataMachine<string[]>('get-available-currencies').withConfig({
+        services: {
+          fetchData: () => {
+            return Currencies.getCurrencies().catch((error) => {
+              console.error('There was an issue getting currencies!', error)
+            })
+          },
+        },
+      }),
+      { devTools: true }
+    )
+    fetchSend('FETCH')
+
+    const currencyOptions = computed(() => {
+      return fetchState.value.context.results ?? []
+    })
+
+    const updateFormData = (updatedFormData: CurrencyConversionRequest) => {
+      currencyConversionFormService.send({ type: 'CHANGE', formData: updatedFormData })
+    }
+
+    const updateAmount = (amountInput: HTMLInputElement) => {
+      const updatedFormData = {
+        ...(currencyConversionFormState.value.context.formData as CurrencyConversionRequest),
+        amount: parseInt(amountInput.value),
+      }
+      updateFormData(updatedFormData)
+    }
+
+    const updateFromSelected = (fromSelected: string) => {
+      const updatedFormData = {
+        ...(currencyConversionFormState.value.context.formData as CurrencyConversionRequest),
+        baseCurrency: fromSelected,
+      }
+      updateFormData(updatedFormData)
+    }
+
+    watch(
+      () => toCurrencies.value,
+      () => {
+        const updatedFormData = {
+          ...(currencyConversionFormState.value.context.formData as CurrencyConversionRequest),
+          currenciesToConvert: toCurrencies.value.toString(),
+        }
+
+        updateFormData(updatedFormData)
+      }
+    )
+
+    return {
+      currencyConversionFormService,
+      fromCurrency,
+      toCurrencies,
+      currencyOptions,
+      updateFromSelected,
+      updateAmount,
+    }
+  },
+})
+</script>
+
+<!-- TODO: override styles to reduce layout shifts when opening dropdown and making selections -->
+<style src="@suadelabs/vue3-multiselect/dist/vue3-multiselect.css"></style>

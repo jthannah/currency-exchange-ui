@@ -1,52 +1,83 @@
 <template>
-  <div>
-    <h1>Currency Exchange Rate</h1>
-    <form>
-      <!--
-  This example requires Tailwind CSS v2.0+
+  <div class="p-10 text-left bg-gray-600 rounded-md shadow-md">
+    <CurrencyExchangeForm />
 
-  This example requires some changes to your config:
-
-  ```
-  // tailwind.config.js
-  module.exports = {
-    // ...
-    plugins: [
-      // ...
-      require('@tailwindcss/forms'),
-    ]
-  }
-  ```
--->
-<div>
-  <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-  <div class="mt-1 relative rounded-md shadow-sm">
-    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <span class="text-gray-500 sm:text-sm">
-        $
-      </span>
+    <div v-if="formSubmitting" class="flex items-center">
+      <LoadingIcon class="w-6 h-6" />
+      <span class="px-5 text-xl font-medium text-gray-200">Calculating...</span>
     </div>
-    <input type="text" name="price" id="price" class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md" placeholder="0.00" aria-describedby="price-currency">
-    <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-      <span class="text-gray-500 sm:text-sm" id="price-currency">
-        USD
-      </span>
+    <div v-if="formError" class="w-full pb-4 font-bold text-center text-pink-400">
+      Make sure all fields are filled out!
     </div>
-  </div>
-</div>
-
-    </form>
+    <div v-else class="sm:grid-cols-2 grid grid-cols-1 gap-5 mt-10">
+      <SaveRequestForm />
+      <ResultItem v-for="result in conversionResults" :key="result.code" :result="result" />
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, defineComponent } from 'vue'
+import { computed, defineComponent, provide, Ref, ref } from 'vue'
+import { useMachine } from '@xstate/vue'
+import Conversions, { CurrencyConversion, CurrencyConversionRequest } from '../api/conversions'
+import { createFormMachine } from '../machines/form-machine'
+import ResultItem from '../components/result-item.vue'
+import CurrencyExchangeForm from '../components/currency-exchange-form.vue'
+import SaveRequestForm from '../components/save-request-form.vue'
+import LoadingIcon from '../assets/icons/spinner.svg'
 
 export default defineComponent({
   name: 'Home',
+  components: { ResultItem, LoadingIcon, CurrencyExchangeForm, SaveRequestForm },
   setup: () => {
+    const conversionResults: Ref<CurrencyConversion[]> = ref([])
 
-  }
+    const { state: formState, send: formSend, service: formService } = useMachine(
+      createFormMachine<CurrencyConversionRequest>({
+        id: 'currency-conversion-form',
+        initialFormData: {
+          amount: 1,
+          baseCurrency: undefined,
+          currenciesToConvert: undefined,
+        },
+      }).withConfig({
+        services: {
+          submit: (context) => {
+            if (
+              context.formData === undefined ||
+              context.formData.baseCurrency === undefined ||
+              context.formData.currenciesToConvert === undefined ||
+              context.formData.amount === undefined
+            ) {
+              return Promise.reject('Request data cannot be undefined!')
+            }
+            return Conversions.getCurrencyConversions(context.formData).then((response) => {
+              conversionResults.value = response
+            })
+          },
+        },
+      }),
+      { devTools: true }
+    )
+    provide('currencyConversionFormService', formService)
+    provide('currencyConversionFormState', formState)
+
+    const formSubmitting = computed(() => {
+      return formState.value.matches('submitting') ?? false
+    })
+
+    const formError = computed(() => {
+      return formState.value.matches('error') ?? false
+    })
+
+    return {
+      formSubmitting,
+      formError,
+      conversionResults,
+    }
+  },
 })
 </script>
 
+<!-- TODO: override styles to reduce layout shifts -->
+<style src="@suadelabs/vue3-multiselect/dist/vue3-multiselect.css"></style>

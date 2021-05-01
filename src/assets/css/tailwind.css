@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .text-embossed {
+        @apply bg-clip-text text-transparent bg-gray-300 font-bold;
+        text-shadow: rgba(0,0,0,0.5) 0px 3px 3px;
+    }
+}
