@@ -8,11 +8,11 @@ import 'vue-toastification/dist/index.css'
 import './assets/fonts/inter.css'
 import './assets/css/tailwind.css'
 
-// TODO: disable this for production mode
-inspect({
-  // Open xstate visualizer in a new tab
-  iframe: false,
-})
+// This should be disabled in production mode
+// inspect({
+//   // Open xstate visualizer in a new tab
+//   iframe: false,
+// })
 
 const options: PluginOptions = {
   timeout: 5000,

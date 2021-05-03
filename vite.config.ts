@@ -9,10 +9,10 @@ export default defineConfig({
   plugins: [vue(), svgLoader()],
   server: {
     open: true,
-    https: {
-      key: fs.readFileSync('localhost-key.pem'),
-      cert: fs.readFileSync('localhost.pem'),
-    },
+    // https: {
+    //   key: fs.readFileSync('localhost-key.pem'),
+    //   cert: fs.readFileSync('localhost.pem'),
+    // },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8000/api',
