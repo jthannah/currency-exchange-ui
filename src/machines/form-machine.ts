@@ -27,7 +27,7 @@ const createActions = <TFormData>() => {
       error: (_, event: DoneInvokeEvent<never>) => event.data,
     }) as ActionObject<FormContext<TFormData>, FormEvents<TFormData>>,
     recordError: (context: FormContext<TFormData>) => {
-      console.error(context.error)
+      //console.error(context.error)
     },
     clearError: assign({
       error: undefined,

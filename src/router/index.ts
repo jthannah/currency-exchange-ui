@@ -1,23 +1,23 @@
-import { createWebHistory, createRouter } from "vue-router";
-import Home from "/src/views/Home.vue";
-import Share from "/src/views/Share.vue";
+import { createRouter, createWebHistory } from 'vue-router'
+import Home from '/src/views/home.vue'
+import SavedConversions from '/src/views/saved-conversions.vue'
 
 const routes = [
   {
-    path: "/",
-    name: "Home",
+    path: '/',
+    name: 'Home',
     component: Home,
   },
   {
-    path: "/share",
-    name: "Share",
-    component: Share,
+    path: '/saved',
+    name: 'SavedConversions',
+    component: SavedConversions,
   },
-];
+]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-});
+})
 
-export default router;
+export default router

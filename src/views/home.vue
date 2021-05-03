@@ -1,16 +1,13 @@
 <template>
-  <div class="p-10 text-left bg-gray-600 rounded-md shadow-md">
-    <CurrencyExchangeForm />
+  <div>
+    <CurrencyExchangeForm class="p-5" />
 
-    <div v-if="formSubmitting" class="flex items-center">
+    <div v-if="formSubmitting" class="flex items-center justify-center px-5 pb-4">
       <LoadingIcon class="w-6 h-6" />
       <span class="px-5 text-xl font-medium text-gray-200">Calculating...</span>
     </div>
-    <div v-if="formError" class="w-full pb-4 font-bold text-center text-pink-400">
-      Make sure all fields are filled out!
-    </div>
-    <div v-else class="sm:grid-cols-2 grid grid-cols-1 gap-5 mt-10">
-      <SaveRequestForm />
+    <div v-else class="sm:grid-cols-2 grid grid-cols-1 pb-4 gap-5 px-5">
+      <SaveRequestForm v-if="conversionResults.length > 0" />
       <ResultItem v-for="result in conversionResults" :key="result.code" :result="result" />
     </div>
   </div>
@@ -66,13 +63,8 @@ export default defineComponent({
       return formState.value.matches('submitting') ?? false
     })
 
-    const formError = computed(() => {
-      return formState.value.matches('error') ?? false
-    })
-
     return {
       formSubmitting,
-      formError,
       conversionResults,
     }
   },

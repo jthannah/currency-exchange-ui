@@ -34,8 +34,14 @@ export default {
       })
   },
 
-  saveCurrencyConversions(saveData: SaveCurrencyConversionRequest): Promise<CurrencyConversion[]> {
+  saveCurrencyConversions(saveData: SaveCurrencyConversionRequest): Promise<void> {
     return instance.post('/saveConversion', saveData).then((response) => {
+      return response.data
+    })
+  },
+
+  getSavedCurrencyConversions(email: string): Promise<CurrencyConversion[]> {
+    return instance.post('/getConversions', { email: email }).then((response) => {
       return response.data
     })
   },
